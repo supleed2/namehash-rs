@@ -1,0 +1,18 @@
+[package]
+name = "namehash"
+version = "0.1.0"
+edition = "2021"
+description = "CLI program for hashing domain names according to EIP-137"
+homepage = "https://github.com/supleed2/namehash-rs"
+license = "Apache-2.0"
+repository = "https://github.com/supleed2/namehash-rs"
+# documentation = ""
+# keywords = []
+# categories = []
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clap = { version = "4.2.7", features = ["derive"] }
+hex = "0.4.3"
+tiny-keccak = { version = "2.0.2", features = ["keccak"] }
