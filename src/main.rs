@@ -1,4 +1,4 @@
-// use std::path::PathBuf;
+use std::io::prelude::*;
 
 use clap::{Parser, Subcommand};
 
@@ -15,30 +15,51 @@ enum Commands {
         /// Domain to get namehash of
         domain: String,
     },
-    // /// Get the namehashes of many domains at once, THIS COMMAND IS INCOMPLETE
-    // File {
-    //     /// Path to input file, domains to hash with 1 per line
-    //     input: PathBuf,
-    //     /// File to save hashes to, stdout if not given
-    //     #[arg(short, long, value_name = "FILE")]
-    //     output: Option<PathBuf>,
-    // },
+    /// Get the namehashes of many domains at once
+    File {
+        /// Path to input file, domains to hash with 1 per line
+        input: std::path::PathBuf,
+        /// File to save hashes to, stdout if not given
+        #[arg(short, long, value_name = "FILE")]
+        output: Option<std::path::PathBuf>,
+    },
 }
 
-fn main() {
+fn main() -> std::io::Result<()> {
     match Cli::parse().command {
-        Commands::Domain { domain } => println!("{domain}: 0x{}", hex::encode(namehash(&domain))),
-        // Commands::File { input, output } => match output {
-        //     None => println!(
-        //         "Hashing domains in {}, output to stdout, THIS COMMAND IS INCOMPLETE",
-        //         input.display()
-        //     ),
-        //     Some(output) => println!(
-        //         "Hashing domains in {}, output to {}, THIS COMMAND IS INCOMPLETE",
-        //         input.display(),
-        //         output.display()
-        //     ),
-        // },
+        Commands::Domain { domain } => {
+            println!("{domain}: 0x{}", hex::encode(namehash(&domain)));
+            Ok(())
+        }
+        Commands::File { input, output } => match output {
+            None => {
+                let input = std::fs::File::open(input)?;
+                for line in std::io::BufReader::new(input).lines() {
+                    match line {
+                        Ok(domain) => {
+                            println!("{domain}: 0x{}", hex::encode(namehash(&domain)))
+                        }
+                        Err(error) => eprintln!("Error: {error}"),
+                    }
+                }
+                Ok(())
+            }
+            Some(output) => {
+                let input = std::fs::File::open(input)?;
+                let mut outstr = String::new();
+                for line in std::io::BufReader::new(input).lines() {
+                    match line {
+                        Ok(domain) => outstr
+                            .push_str(&format!("{domain}: 0x{}\n", hex::encode(namehash(&domain)))),
+                        Err(error) => eprintln!("Error: {error}"),
+                    }
+                }
+                if let Some(folder) = std::path::Path::new(&output).parent() {
+                    std::fs::create_dir_all(folder).unwrap();
+                }
+                write!(std::fs::File::create(output)?, "{}", outstr)
+            }
+        },
     }
 }
 
@@ -56,7 +77,7 @@ fn namehash(name: &str) -> Vec<u8> {
         return vec![0u8; 32];
     }
     let mut hash = vec![0u8; 32];
-    for label in name.rsplit(".") {
+    for label in name.rsplit('.') {
         hash.append(&mut keccak256(label.as_bytes()).to_vec());
         hash = keccak256(hash.as_slice()).to_vec();
     }
