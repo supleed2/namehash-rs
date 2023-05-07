@@ -1,6 +1,6 @@
 [package]
 name = "namehash"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 description = "CLI program for hashing domain names according to EIP-137"
 homepage = "https://github.com/supleed2/namehash-rs"
